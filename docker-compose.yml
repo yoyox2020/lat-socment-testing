@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sna}
+      POSTGRES_USER: ${POSTGRES_USER:-sna}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sna_local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sna} -d ${POSTGRES_DB:-sna}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    command: npm start
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sna}:${POSTGRES_PASSWORD:-sna_local}@postgres:5432/${POSTGRES_DB:-sna}
+      REDIS_URL: redis://redis:6379
+      ENSEMBLEDATA_API_TOKEN: ${ENSEMBLEDATA_API_TOKEN:-}
+      ENSEMBLEDATA_BASE_URL: ${ENSEMBLEDATA_BASE_URL:-https://ensembledata.com/apis}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./backend
+    command: npm run worker
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sna}:${POSTGRES_PASSWORD:-sna_local}@postgres:5432/${POSTGRES_DB:-sna}
+      REDIS_URL: redis://redis:6379
+      ENSEMBLEDATA_API_TOKEN: ${ENSEMBLEDATA_API_TOKEN:-}
+      ENSEMBLEDATA_BASE_URL: ${ENSEMBLEDATA_BASE_URL:-https://ensembledata.com/apis}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

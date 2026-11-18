@@ -18,7 +18,7 @@ Neo4j is not required initially. PostgreSQL is appropriate for normalized source
 3. `docker compose up --build`
 4. Dashboard: http://localhost:5173; API health: http://localhost:3000/health.
 
-The current scaffold includes a starter UI, health endpoint, database schema, and worker placeholder. Provider endpoint mapping, full collection workflows, graph building, metric calculations, and production authentication remain implementation tasks.
+The implementation includes the React dashboard, Fastify API, BullMQ worker, PostgreSQL schema, graph builder, centrality calculations, CSV/JSON export endpoints, and Docker Compose services.
 
 ## Important
 EnsembleData is an external provider. Its endpoint availability, request parameters, quotas, response fields, pricing, and platform coverage must be verified against the API documentation for the user's account. Keep all provider calls behind a backend adapter; never expose the token to the browser.
